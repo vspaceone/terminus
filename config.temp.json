@@ -1,0 +1,6 @@
+{
+    "dbHost": "hostname",
+    "dbName": "name of database",
+    "dbUser": "name of db user",
+    "dbPassw": "password of db user"
+}
