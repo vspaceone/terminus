@@ -17,7 +17,10 @@ func main() {
 	http.Handle("/", r)
 
 	r.HandleFunc("/", handler)
-	r.HandleFunc("/user/uid/{uid}", userRequestByUID)
+	r.HandleFunc("/get/{type}", get)
+	//TODO use auth tokens
+	r.HandleFunc("/new/{type}", new)
+	r.HandleFunc("/auth", auth)
 
 	// Starting servers in goroutines and waiting for their return
 	var wg sync.WaitGroup

@@ -16,23 +16,55 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-//userRequestByUID's response shows the user entry in the database
-func userRequestByUID(w http.ResponseWriter, r *http.Request) {
+func get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	user := getUserByUID(vars["uid"])
 	json := jsonbuilder.Object()
+	switch vars["type"] {
+	case "user":
+		user := getUserByUID(r.FormValue("uid"))
+		//For some reason jsonbuilder.From(user) does not work
+		json.Set("status", "ok").Begin("data").Set("username", string(user.username)).Set("fullname", string(user.fullname)).End()
 
-	//For some reason jsonbuilder.From(user) does not work
-	json.Set("firstName", string(user.firstName)).Set("lastName", string(user.lastName))
+		if r.FormValue("token") != "" {
+			if verifyToken(r.FormValue("uid"), r.FormValue("token")) {
+				json.Set("authLevel", "authenticated")
+			} else {
+				json.Set("authLevel", "invalid")
+			}
+		}
 
-	fmt.Fprintf(w, json.MarshalPretty())
+		fmt.Fprintf(w, json.MarshalPretty())
+	default:
+		json.Set("status", "unknown query")
 
-	return
+	}
 }
 
-// userRequestPermissionToken requests a permission token from the server,
-// that autheticates the user for an certain amount of time allowing him not to log in for a while
-func userRequestPermissionToken(w http.ResponseWriter, r *http.Request) {
-	//verify user password and generate and return a token
-	//store token in Authenticator (TODO)
+func new(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	json := jsonbuilder.Object()
+	switch vars["type"] {
+	case "user":
+		res := createNewUser(r.FormValue("uid"), r.FormValue("username"), r.FormValue("fullname"), r.FormValue("password"))
+		//For some reason jsonbuilder.From(user) does not work
+		json.Set("status", res)
+		fmt.Fprintf(w, json.MarshalPretty())
+	default:
+		json.Set("status", "unknown query")
+
+	}
+}
+
+func auth(w http.ResponseWriter, r *http.Request) {
+	//vars := mux.Vars(r)
+	json := jsonbuilder.Object()
+	result := checkPasswordOnUserID(getUserIDByUID(r.FormValue("uid")), r.FormValue("password"))
+	//For some reason jsonbuilder.From(user) does not work
+	if result {
+		json.Set("status", "ok").Begin("data").Set("token", newAuthenticatorSession(r.FormValue("uid"))).End()
+	} else {
+		json.Set("status", "wrong password or userid")
+	}
+
+	fmt.Fprintf(w, json.MarshalPretty())
 }

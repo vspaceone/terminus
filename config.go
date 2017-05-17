@@ -7,7 +7,16 @@ import (
 	"io/ioutil"
 )
 
-func getConfiguration() (interface{}, error) {
+var config interface{}
+
+func getConfiguration() interface{} {
+	if config == nil {
+		config, _ = loadConfiguration()
+	}
+	return config
+}
+
+func loadConfiguration() (interface{}, error) {
 	var config map[string]interface{}
 
 	dat, err := ioutil.ReadFile("config.json")
@@ -21,5 +30,5 @@ func getConfiguration() (interface{}, error) {
 		return config, errors.New("Couldn't unmarshal configuration file")
 	}
 
-	return config, nil
+	return config, err
 }
