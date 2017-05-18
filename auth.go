@@ -6,29 +6,29 @@ import (
 
 type authenticator struct {
 	time  int64
-	uid   string
+	uid   int32
 	token string
 }
 
-var authenticatorSessions = make(map[string]authenticator)
+var authenticatorSessions = make(map[int32]authenticator)
 
 // Timeout for session in seconds
 var sessionTimeout int64 = 60
 
-func newAuthenticatorSession(uid string) string {
+func newAuthenticatorSession(userid int32) string {
 	token := genToken()
-	authenticatorSessions[uid] = authenticator{time.Now().Unix(), uid, token}
+	authenticatorSessions[userid] = authenticator{time.Now().Unix(), userid, token}
 	return token
 }
 
-func sessionExists(uid string) bool {
-	_, ok := authenticatorSessions[uid]
+func sessionExists(userid int32) bool {
+	_, ok := authenticatorSessions[userid]
 	return ok
 }
 
-func verifyToken(uid, token string) bool {
+func verifyToken(userid int32, token string) bool {
 	//fmt.Println((time.Now().Unix() - authenticatorSessions[uid].time))
-	return authenticatorSessions[uid].token == token && (time.Now().Unix()-authenticatorSessions[uid].time) < sessionTimeout
+	return authenticatorSessions[userid].token == token && (time.Now().Unix()-authenticatorSessions[userid].time) < sessionTimeout
 }
 
 func genToken() string {

@@ -26,16 +26,21 @@ type User struct {
 }
 
 // getUserByUID gets the User entry in the database by his Tag's UID
-func getUserByUID(uid string) User {
+func getUserByUID(uid string) (User, error) {
 	var userid int32
 	var username string
 	var fullname string
 	var authlevel int32
 
-	getS("user, tags", "user.userid, username, fullname, authlevel", "user.userid = tags.userid AND tags.taguid = "+uid, &userid, &username, &fullname, &authlevel)
+	var user User
 
-	return User{userid, username, fullname, authlevel}
+	err := getS("user, tags", "user.userid, username, fullname, authlevel", "user.userid = tags.userid AND tags.taguid = "+uid, &userid, &username, &fullname, &authlevel)
 
+	if err == nil {
+		user = User{userid, username, fullname, authlevel}
+	}
+
+	return user, err
 }
 
 func getUserIDByUID(uid string) int32 {
@@ -49,26 +54,36 @@ func getUserIDByUID(uid string) int32 {
 	return userid
 }
 
-func getUserByUserID(userid int32) User {
+func getUserByUserID(userid int32) (User, error) {
 	var username string
 	var fullname string
 	var authlevel int32
-	getS("user", "userid, username, fullname, authlevel", "userid = "+strconv.FormatInt(int64(userid), 10), &userid, &username, &fullname, &authlevel)
 
-	var ret = User{userid, username, fullname, authlevel}
+	var user User
 
-	return ret
+	err := getS("user", "userid, username, fullname, authlevel", "userid = "+strconv.FormatInt(int64(userid), 10), &userid, &username, &fullname, &authlevel)
+
+	if err == nil {
+		user = User{userid, username, fullname, authlevel}
+	}
+
+	return user, err
 }
 
-func getUserByUsername(username string) User {
+func getUserByUsername(username string) (User, error) {
 	var userid int32
 	var fullname string
 	var authlevel int32
-	getS("user", "userid, username, fullname, authlevel", "username = "+username, &userid, &username, &fullname, &authlevel)
 
-	var ret = User{userid, username, fullname, authlevel}
+	var user User
 
-	return ret
+	err := getS("user", "userid, username, fullname, authlevel", "username = '"+username+"'", &userid, &username, &fullname, &authlevel)
+
+	if err == nil {
+		user = User{userid, username, fullname, authlevel}
+	}
+
+	return user, err
 }
 
 func compareUserAuthByUID(uid string, password string) bool {
