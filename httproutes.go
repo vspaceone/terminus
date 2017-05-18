@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"strconv"
+
 	"github.com/coyove/jsonbuilder"
 	"github.com/gorilla/mux"
 )
@@ -27,9 +29,9 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 		if r.FormValue("token") != "" {
 			if verifyToken(r.FormValue("uid"), r.FormValue("token")) {
-				json.Set("authLevel", "authenticated")
+				json.Set("authLevel", user.authlevel)
 			} else {
-				json.Set("authLevel", "invalid")
+				json.Set("authLevel", "none")
 			}
 		}
 
@@ -45,8 +47,8 @@ func new(w http.ResponseWriter, r *http.Request) {
 	json := jsonbuilder.Object()
 	switch vars["type"] {
 	case "user":
-		res := createNewUser(r.FormValue("uid"), r.FormValue("username"), r.FormValue("fullname"), r.FormValue("password"))
-		//For some reason jsonbuilder.From(user) does not work
+		authlevel, _ := strconv.ParseInt(r.FormValue("authlevel"), 10, 64)
+		res := createNewUser(r.FormValue("uid"), r.FormValue("username"), r.FormValue("fullname"), r.FormValue("password"), authlevel)
 		json.Set("status", res)
 		fmt.Fprintf(w, json.MarshalPretty())
 	default:
