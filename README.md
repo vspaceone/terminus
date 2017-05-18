@@ -1,5 +1,5 @@
-# terminus
-Mitgliedbezogene Dienste für den vspace.one
+# terminus-server
+Server for member specific services in a hackerspace
 
 ## API
 * `/` Shows API information

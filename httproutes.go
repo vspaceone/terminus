@@ -13,7 +13,7 @@ import (
 //handler's response informs briefly about this service
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Terminus Server alpha1\nSee docs or ask the devs about the REST API")
+	fmt.Fprintln(w, "Terminus Server alpha1\nSee docs on https://github.com/vspaceone/terminus-server/tree/development or ask the devs about the REST API")
 
 	return
 }
