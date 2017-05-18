@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"strconv"
+
 	"github.com/coyove/jsonbuilder"
 	"github.com/gorilla/mux"
 )
@@ -11,7 +13,7 @@ import (
 //handler's response informs briefly about this service
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Terminus Server alpha1\nSee docs or ask the devs about the REST API")
+	fmt.Fprintln(w, "Terminus Server alpha1\nSee docs on https://github.com/vspaceone/terminus-server/tree/development or ask the devs about the REST API")
 
 	return
 }
@@ -19,25 +21,54 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	json := jsonbuilder.Object()
+
+	//always answer as last action
+	defer func() {
+		fmt.Fprintf(w, json.MarshalPretty())
+	}()
+
 	switch vars["type"] {
 	case "user":
-		user := getUserByUID(r.FormValue("uid"))
-		//For some reason jsonbuilder.From(user) does not work
-		json.Set("status", "ok").Begin("data").Set("username", string(user.username)).Set("fullname", string(user.fullname)).End()
 
-		if r.FormValue("token") != "" {
-			if verifyToken(r.FormValue("uid"), r.FormValue("token")) {
-				json.Set("authLevel", "authenticated")
-			} else {
-				json.Set("authLevel", "invalid")
+		var user User
+		var err error
+
+		if r.FormValue("username") != "" {
+			user, err = getUserByUsername(r.FormValue("username"))
+		} else if r.FormValue("userid") != "" {
+			userID, err := strconv.ParseInt(r.FormValue("userid"), 10, 32)
+
+			if err != nil {
+				json.Set("status", "wrong userid format")
+				return
 			}
+
+			user, err = getUserByUserID(int32(userID))
+		} else if r.FormValue("uid") != "" {
+			user, err = getUserByUID(r.FormValue("uid"))
 		}
 
-		fmt.Fprintf(w, json.MarshalPretty())
+		if err != nil {
+			json.Set("status", "user error")
+			return
+		}
+
+		json.Set("status", "ok").Begin("data").Set("userid", user.userid).Set("username", user.username).Set("fullname", user.fullname).End()
+
+		if r.FormValue("token") != "" {
+			if verifyToken(user.userid, r.FormValue("token")) {
+				json.Set("authLevel", user.authlevel)
+			} else {
+				json.Set("authLevel", "none")
+			}
+		}
+		return
+
 	default:
 		json.Set("status", "unknown query")
-
+		return
 	}
+
 }
 
 func new(w http.ResponseWriter, r *http.Request) {
@@ -45,8 +76,8 @@ func new(w http.ResponseWriter, r *http.Request) {
 	json := jsonbuilder.Object()
 	switch vars["type"] {
 	case "user":
-		res := createNewUser(r.FormValue("uid"), r.FormValue("username"), r.FormValue("fullname"), r.FormValue("password"))
-		//For some reason jsonbuilder.From(user) does not work
+		authlevel, _ := strconv.ParseInt(r.FormValue("authlevel"), 10, 64)
+		res := createNewUser(r.FormValue("uid"), r.FormValue("username"), r.FormValue("fullname"), r.FormValue("password"), authlevel)
 		json.Set("status", res)
 		fmt.Fprintf(w, json.MarshalPretty())
 	default:
@@ -56,15 +87,19 @@ func new(w http.ResponseWriter, r *http.Request) {
 }
 
 func auth(w http.ResponseWriter, r *http.Request) {
-	//vars := mux.Vars(r)
 	json := jsonbuilder.Object()
-	result := checkPasswordOnUserID(getUserIDByUID(r.FormValue("uid")), r.FormValue("password"))
-	//For some reason jsonbuilder.From(user) does not work
-	if result {
-		json.Set("status", "ok").Begin("data").Set("token", newAuthenticatorSession(r.FormValue("uid"))).End()
+	defer func() {
+		fmt.Fprintf(w, json.MarshalPretty())
+	}()
+
+	userid, err := strconv.ParseInt(r.FormValue("userid"), 10, 32)
+
+	result := checkPasswordOnUserID(int32(userid), r.FormValue("password"))
+
+	if result && err == nil {
+		json.Set("status", "ok").Begin("data").Set("token", newAuthenticatorSession(int32(userid))).End()
 	} else {
 		json.Set("status", "wrong password or userid")
 	}
 
-	fmt.Fprintf(w, json.MarshalPretty())
 }
