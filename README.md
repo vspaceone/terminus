@@ -2,6 +2,8 @@
 Server for member specific services in a hackerspace
 
 ## API
+The server listens on port 8000 for http and on port 8001 for https
+
 * `/` Shows API information
 * `/get/user` Get user information
   * `username`|`userid`|`uid` Pass the username/userid/uid for selecting the user
@@ -39,4 +41,5 @@ This software is developed under linux so it's not guaranteed to work on any oth
 * `go install github.com/vspaceone/terminus-server`
 * `cd $GOHOME/src/github.com/vspaceone/terminus-server`
 * Create a config.json according to the template for your needs
-* to start `../../../../bin/terminus-server` from `$GOHOME/src/github.com/vspaceone/terminus-server` (currently config.json needs to be in CWD)
+* To start type `../../../../bin/terminus-server` from `$GOHOME/src/github.com/vspaceone/terminus-server` (currently config.json needs to be in CWD)
+* If https connection is wished then server.crt and server.key should also be in the CWD
