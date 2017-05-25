@@ -34,7 +34,7 @@ func getUserByUID(uid string) (User, error) {
 
 	var user User
 
-	err := getS("user, tags", "user.userid, username, fullname, authlevel", "user.userid = tags.userid AND tags.taguid = "+uid, &userid, &username, &fullname, &authlevel)
+	err := getS("user, tags", "user.userid, username, fullname, authlevel", "user.userid = tags.userid AND tags.taguid = '"+uid+"'", &userid, &username, &fullname, &authlevel)
 
 	if err == nil {
 		user = User{userid, username, fullname, authlevel}
@@ -45,7 +45,7 @@ func getUserByUID(uid string) (User, error) {
 
 func getUserIDByUID(uid string) int32 {
 	var userid int32
-	err := getS("tags", "userid", "taguid = "+uid, &userid)
+	err := getS("tags", "userid", "taguid = '"+uid+"'", &userid)
 
 	if err != nil {
 		return -1
@@ -89,7 +89,7 @@ func getUserByUsername(username string) (User, error) {
 func compareUserAuthByUID(uid string, password string) bool {
 	var dbPassword [256]byte
 	var salt [256]byte
-	getS("passwords, user, tags", "password, salt", "user.userid = passwords.userid AND user.userid = tags.userid AND tags.taguid = "+uid, &dbPassword, &salt)
+	getS("passwords, user, tags", "password, salt", "user.userid = passwords.userid AND user.userid = tags.userid AND tags.taguid = '"+uid+"'", &dbPassword, &salt)
 
 	newHashedPw := pbkdf2.Key([]byte(password), salt[:], 4096, 256, sha1.New)
 
@@ -98,7 +98,7 @@ func compareUserAuthByUID(uid string, password string) bool {
 
 func doesUIDExist(uid string) bool {
 	var i int32
-	getS("tags", "userid", "taguid = "+uid, &i)
+	getS("tags", "COUNT(*)", "taguid = '"+uid+"'", &i)
 
 	return i > 0
 }
@@ -112,7 +112,7 @@ func doesUserIDExist(userid int32) bool {
 
 func doesUsernameExist(username string) bool {
 	var i int32
-	getS("user", "COUNT(*)", "username = "+username, &i)
+	getS("user", "COUNT(*)", "username = '"+username+"'", &i)
 
 	return i > 0
 }
@@ -283,7 +283,7 @@ func getS(table, keys, where string, scanVars ...interface{}) error {
 
 	// Prepares statement
 	stmt := "SELECT " + keys + " FROM " + table + " WHERE " + where
-
+	fmt.Println(stmt)
 	stmtOut, err := db.Prepare(stmt)
 	check(err)
 	defer stmtOut.Close()
@@ -328,7 +328,7 @@ func getM(table, keys, where string) (*sql.Rows, error) {
 
 	// Prepares statement
 	stmt := "SELECT " + keys + " FROM " + table + " WHERE " + where
-
+	fmt.Println(stmt)
 	stmtOut, err := db.Prepare(stmt)
 	check(err)
 	defer stmtOut.Close()
